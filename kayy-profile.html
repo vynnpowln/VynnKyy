@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kayy — Chaskya Nizar Purnama</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;700;900&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#171129;
+    --ink-2:#241C3D;
+    --ink-3:#2E2350;
+    --paper:#FBF3E3;
+    --coral:#FF5D73;
+    --gold:#FFC857;
+    --teal:#2EE6D6;
+    --line: rgba(251,243,227,0.16);
+    --line-dark: rgba(23,17,41,0.18);
+
+    --font-display:'Big Shoulders Display', sans-serif;
+    --font-body:'IBM Plex Sans', sans-serif;
+    --font-mono:'IBM Plex Mono', monospace;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  @media (prefers-reduced-motion: reduce){
+    html{scroll-behavior:auto;}
+    *{animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important;}
+  }
+
+  body{
+    margin:0;
+    background:var(--ink);
+    color:var(--paper);
+    font-family:var(--font-body);
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+
+  a{color:inherit;}
+  ::selection{background:var(--coral); color:var(--ink);}
+  a:focus-visible, button:focus-visible, .tag:focus-visible{
+    outline:2px solid var(--gold); outline-offset:3px; border-radius:2px;
+  }
+
+  /* ---------------- Flight progress bar (fixed) ---------------- */
+  .flight-bar{
+    position:fixed; top:0; left:0; right:0; height:34px; z-index:50;
+    background:rgba(23,17,41,0.85);
+    backdrop-filter: blur(6px);
+    border-bottom:1px solid var(--line);
+    display:flex; align-items:center;
+    padding:0 18px;
+  }
+  .flight-track{
+    position:relative; flex:1; height:2px;
+    background:repeating-linear-gradient(to right, var(--line) 0 6px, transparent 6px 12px);
+  }
+  .flight-plane{
+    position:absolute; top:50%; left:0%;
+    transform:translate(-50%,-50%);
+    width:20px; height:20px;
+    transition: left 0.05s linear;
+  }
+  .flight-plane svg{ width:100%; height:100%; display:block; }
+  .flight-label{
+    font-family:var(--font-mono); font-size:10px; letter-spacing:0.12em;
+    text-transform:uppercase; color:var(--gold); margin-right:14px; white-space:nowrap;
+  }
+  .flight-label-end{
+    font-family:var(--font-mono); font-size:10px; letter-spacing:0.12em;
+    text-transform:uppercase; color:rgba(251,243,227,0.5); margin-left:14px; white-space:nowrap;
+  }
+
+  /* ---------------- Ambient blobs ---------------- */
+  .blob{
+    position:fixed; border-radius:50%; filter: blur(70px); z-index:0; pointer-events:none;
+    opacity:0.35;
+  }
+  .blob-1{ width:420px; height:420px; background:var(--coral); top:-120px; left:-100px;
+    animation: driftA 22s ease-in-out infinite; }
+  .blob-2{ width:380px; height:380px; background:var(--teal); top:200px; right:-140px;
+    animation: driftB 26s ease-in-out infinite; }
+  .blob-3{ width:320px; height:320px; background:var(--gold); bottom:-100px; left:30%;
+    animation: driftA 30s ease-in-out infinite reverse; }
+  @keyframes driftA{ 0%,100%{ transform:translate(0,0) scale(1);} 50%{ transform:translate(60px,40px) scale(1.15);} }
+  @keyframes driftB{ 0%,100%{ transform:translate(0,0) scale(1);} 50%{ transform:translate(-50px,60px) scale(0.9);} }
+
+  .bg-grid{
+    position:fixed; inset:0; z-index:0; pointer-events:none;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 42px 42px;
+    opacity:0.25;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 20%, black 20%, transparent 75%);
+  }
+
+  .wrap{
+    position:relative; z-index:1;
+    max-width:920px;
+    margin:0 auto;
+    padding: 90px 22px 90px;
+  }
+
+  .route{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:0.18em;
+    text-transform:uppercase; color:var(--gold);
+    display:flex; align-items:center; gap:10px; margin-bottom:26px;
+  }
+  .route::before{content:"";width:26px;height:1px;background:var(--gold);}
+
+  /* ---------------- Hero: split-flap board ---------------- */
+  .flap-hero{
+    background:var(--ink-2);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:34px 30px 30px;
+    box-shadow: 0 30px 60px -25px rgba(0,0,0,0.6);
+    opacity:0; transform:translateY(18px);
+    animation: rise 0.7s cubic-bezier(.2,.8,.2,1) 0.1s forwards;
+  }
+  @keyframes rise{ to{ opacity:1; transform:translateY(0);} }
+
+  .flap-eyebrow{
+    font-family:var(--font-mono); font-size:11px; letter-spacing:0.2em;
+    text-transform:uppercase; color:var(--teal); margin-bottom:10px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .flap-eyebrow .dot{
+    width:7px; height:7px; border-radius:50%; background:var(--coral);
+    animation: pulseDot 1.6s ease-in-out infinite;
+  }
+  @keyframes pulseDot{ 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+
+  .flap-name{
+    font-family:var(--font-display); font-weight:900;
+    font-size:clamp(38px,7.4vw,64px); line-height:0.94;
+    text-transform:uppercase; margin:0 0 18px; letter-spacing:0.01em;
+  }
+  .flap-name .accent{ color:var(--coral); }
+
+  .flap-board{
+    display:flex; flex-wrap:wrap; gap:6px;
+    background:var(--ink);
+    border-radius:8px;
+    padding:16px 18px;
+    margin-bottom:20px;
+  }
+  .flap-char{
+    font-family:var(--font-mono); font-weight:600; font-size:20px;
+    color:var(--gold);
+    background:var(--ink-3);
+    width:28px; height:38px;
+    display:flex; align-items:center; justify-content:center;
+    border-radius:3px;
+    position:relative;
+    box-shadow: inset 0 0 0 1px rgba(251,243,227,0.06);
+  }
+  .flap-char::after{
+    content:""; position:absolute; left:0; right:0; top:50%; height:1px;
+    background:rgba(23,17,41,0.5);
+  }
+  .flap-char.space{ background:transparent; box-shadow:none; width:14px; }
+
+  .flap-caption{
+    font-family:var(--font-mono); font-size:11px; letter-spacing:0.1em;
+    text-transform:uppercase; color:rgba(251,243,227,0.45);
+  }
+
+  @media (max-width:560px){
+    .flap-char{ width:20px; height:30px; font-size:14px; }
+  }
+
+  /* ---------------- Section headers ---------------- */
+  section{ margin-top:74px; position:relative; }
+  .sec-head{ display:flex; align-items:baseline; gap:16px; margin-bottom:30px; }
+  .sec-num{ font-family:var(--font-mono); font-size:12px; color:var(--gold); letter-spacing:0.1em; }
+  .sec-title{
+    font-family:var(--font-display); font-weight:700; font-size:clamp(26px,4vw,36px);
+    text-transform:uppercase; letter-spacing:0.01em;
+  }
+  .sec-title .accent{ color:var(--coral); }
+  .sec-rule{ flex:1; height:1px; background:var(--line); align-self:center; }
+
+  .reveal{
+    opacity:0; transform:translateY(22px);
+    transition: opacity 0.6s ease, transform 0.6s cubic-bezier(.2,.8,.2,1);
+  }
+  .reveal.in-view{ opacity:1; transform:translateY(0); }
+
+  /* ---------------- Profile ---------------- */
+  .profile-card{
+    background:var(--ink-2); border:1px solid var(--line); border-radius:12px;
+    padding:30px 32px; font-size:17px; line-height:1.7; color:rgba(251,243,227,0.9);
+    animation: floatY 6s ease-in-out infinite;
+  }
+  @keyframes floatY{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-6px);} }
+  .profile-card .stamp-inline{ color:var(--gold); font-family:var(--font-mono); font-weight:600; }
+
+  /* ---------------- Itinerary / stamps ---------------- */
+  .itinerary{ position:relative; padding-left:38px; }
+  .itinerary::before{
+    content:""; position:absolute; left:9px; top:6px; bottom:6px; width:1px;
+    background: repeating-linear-gradient(to bottom, var(--line) 0, var(--line) 6px, transparent 6px, transparent 12px);
+  }
+  .stop{ position:relative; margin-bottom:44px; }
+  .stop:last-child{ margin-bottom:0; }
+
+  .stop-stamp{
+    position:absolute; left:-38px; top:0; width:56px; height:56px; border-radius:50%;
+    border:2px solid var(--gold); display:flex; align-items:center; justify-content:center;
+    text-align:center; background:var(--ink);
+    opacity:0; transform:scale(2.2) rotate(18deg);
+    transition: opacity 0.45s ease, transform 0.5s cubic-bezier(.34,1.56,.64,1);
+  }
+  .stop-stamp.in-view{ opacity:1; transform:scale(1) rotate(-8deg); }
+  .stop-stamp span{ font-family:var(--font-mono); font-size:10px; line-height:1.15; color:var(--gold); }
+
+  .stop-body{
+    margin-left:34px; background:var(--ink-2); border:1px solid var(--line); border-radius:10px;
+    padding:22px 26px 24px;
+    transition: transform 0.25s ease, border-color 0.25s ease;
+  }
+  .stop-body:hover{ transform:translateY(-3px); border-color:var(--coral); }
+  .stop-place{ font-family:var(--font-mono); font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--teal); margin-bottom:6px; }
+  .stop-title{ font-family:var(--font-display); font-weight:700; font-size:24px; text-transform:uppercase; margin:0 0 4px; }
+  .stop-sub{ font-family:var(--font-mono); font-size:12.5px; color:var(--coral); margin-bottom:14px; }
+  .stop ul{ margin:0; padding-left:18px; color:rgba(251,243,227,0.82); line-height:1.6; font-size:15px; }
+  .stop li{ margin-bottom:6px; }
+  .stop li:last-child{ margin-bottom:0; }
+
+  @media (max-width:560px){
+    .itinerary{ padding-left:26px; }
+    .itinerary::before{ left:6px; }
+    .stop-stamp{ left:-26px; width:44px; height:44px; }
+    .stop-stamp span{ font-size:8.5px; }
+    .stop-body{ margin-left:24px; padding:18px 18px 20px; }
+  }
+
+  /* ---------------- Education ---------------- */
+  .edu-grid{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  @media (max-width:640px){ .edu-grid{ grid-template-columns:1fr; } }
+  .edu-card{
+    border:1px solid var(--line); border-radius:10px; padding:22px 24px; background:var(--ink-2);
+    position:relative; transition: transform 0.25s ease, border-color 0.25s ease;
+  }
+  .edu-card:hover{ transform:translateY(-3px) rotate(-0.5deg); border-color:var(--gold); }
+  .edu-card .tag-period{
+    display:inline-block; font-family:var(--font-mono); font-size:11px; letter-spacing:0.1em;
+    color:var(--ink); background:var(--gold); padding:3px 9px; border-radius:20px; margin-bottom:14px;
+  }
+  .edu-school{ font-family:var(--font-display); font-weight:700; font-size:21px; text-transform:uppercase; margin:0 0 4px; }
+  .edu-course{ font-family:var(--font-mono); font-size:13px; color:var(--teal); }
+
+  /* ---------------- Skills carousel (baggage claim) ---------------- */
+  .carousel-wrap{
+    overflow:hidden; border-top:1px dashed var(--line); border-bottom:1px dashed var(--line);
+    padding:20px 0; margin-bottom:26px;
+  }
+  .carousel-track{
+    display:flex; gap:16px; width:max-content;
+    animation: marquee 16s linear infinite;
+  }
+  .carousel-wrap:hover .carousel-track{ animation-play-state:paused; }
+  @keyframes marquee{ from{ transform:translateX(0); } to{ transform:translateX(-50%); } }
+
+  .tag{
+    display:flex; align-items:center; gap:8px; font-family:var(--font-mono); font-size:13px;
+    letter-spacing:0.03em; background:var(--paper); color:var(--ink);
+    padding:9px 14px 9px 10px; border-radius:4px 10px 10px 4px; white-space:nowrap;
+  }
+  .tag::before{ content:""; width:8px; height:8px; border-radius:50%; background:var(--ink); opacity:0.15; }
+  .tag.lang::before{ background:var(--coral); opacity:1; }
+
+  .lang-row{ display:flex; flex-wrap:wrap; gap:14px; }
+
+  /* ---------------- Footer ---------------- */
+  footer{
+    margin-top:90px; border-top:1px dashed var(--line); padding-top:34px;
+    display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:24px;
+  }
+  .foot-title{
+    font-family:var(--font-display); font-weight:900; font-size:clamp(32px,6vw,52px);
+    text-transform:uppercase; line-height:0.95;
+  }
+  .foot-title .accent{ color:var(--coral); }
+  .now-boarding{
+    font-family:var(--font-mono); font-size:11px; letter-spacing:0.2em; text-transform:uppercase;
+    color:var(--teal); margin-bottom:8px;
+    animation: flicker 3.2s linear infinite;
+  }
+  @keyframes flicker{
+    0%,100%{ opacity:1; } 4%{ opacity:0.4; } 6%{ opacity:1; } 46%{ opacity:1; } 48%{ opacity:0.5; } 50%{ opacity:1; }
+  }
+  .foot-contact{ font-family:var(--font-mono); font-size:13px; line-height:2; color:rgba(251,243,227,0.75); text-align:right; }
+  .foot-contact a{ text-decoration:none; border-bottom:1px solid var(--line); padding-bottom:1px; transition: color 0.2s ease, border-color 0.2s ease; }
+  .foot-contact a:hover{ border-color:var(--gold); color:var(--gold); }
+  @media (max-width:560px){ .foot-contact{ text-align:left; } }
+  .fine-print{
+    width:100%; font-family:var(--font-mono); font-size:10.5px; letter-spacing:0.08em;
+    text-transform:uppercase; color:rgba(251,243,227,0.35); margin-top:8px;
+  }
+</style>
+</head>
+<body>
+
+<div class="flight-bar">
+  <span class="flight-label">MES</span>
+  <div class="flight-track">
+    <div class="flight-plane" id="flightPlane">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M2 14L22 12L2 10L4.5 12L2 14Z" fill="#FFC857"/>
+      </svg>
+    </div>
+  </div>
+  <span class="flight-label-end">CGK</span>
+</div>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+<div class="bg-grid"></div>
+
+<div class="wrap">
+
+  <div class="route">Medan (MES) → Jakarta (CGK) · Tourism &amp; Digital Marketing Route</div>
+
+  <!-- HERO: split-flap board -->
+  <div class="flap-hero">
+    <div class="flap-eyebrow"><span class="dot"></span>Now boarding · Passenger profile</div>
+    <h1 class="flap-name">Chaskya Nizar<br><span class="accent">Purnama</span></h1>
+
+    <div class="flap-board" id="flapBoard" aria-live="polite"></div>
+    <div class="flap-caption">known as “Kayy” · role cycles every few seconds</div>
+  </div>
+
+  <!-- PROFILE -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">01</span>
+      <span class="sec-title">Profile</span>
+      <span class="sec-rule"></span>
+    </div>
+    <div class="profile-card">
+      Chaskya — <span class="stamp-inline">Kayy</span> to most people — is 19 and an active tourism student at
+      Politeknik Negeri Medan. Her world sits at the crossing of two runways: building real tour products for
+      travellers, and building an audience online. Between promotional flyers for Instagram, five semesters
+      leading her class, and a short-lived life as a TikTok game streamer, she moves comfortably between the
+      practical side of tourism and the performative side of social media.
+    </div>
+  </section>
+
+  <!-- EXPERIENCE -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">02</span>
+      <span class="sec-title">Journey <span class="accent">Log</span></span>
+      <span class="sec-rule"></span>
+    </div>
+
+    <div class="itinerary">
+      <div class="stop reveal">
+        <div class="stop-stamp"><span>2025<br>—<br>NOW</span></div>
+        <div class="stop-body">
+          <div class="stop-place">Antavaya Tour · Central Jakarta</div>
+          <h3 class="stop-title">Perjalanan Wisata D3</h3>
+          <div class="stop-sub">Tour Product · Digital Marketing · Leadership</div>
+          <ul>
+            <li>Built domestic and international tour products over a 6-month placement</li>
+            <li>Designed tour flyers and promotional graphics for Instagram</li>
+            <li>Served as class leader for five semesters running</li>
+            <li>Ran a small game-streaming channel on TikTok</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="stop reveal">
+        <div class="stop-stamp"><span>2021<br>—<br>2024</span></div>
+        <div class="stop-body">
+          <div class="stop-place">Mawar Bakery · Medan, Gatsu Branch</div>
+          <h3 class="stop-title">Tata Boga Internship</h3>
+          <div class="stop-sub">Pastry &amp; Cake Decoration</div>
+          <ul>
+            <li>Completed a 6-month internship at Mawar Bakery Medan</li>
+            <li>Made pastries and decorated cakes as part of daily production</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EDUCATION -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">03</span>
+      <span class="sec-title">Education</span>
+      <span class="sec-rule"></span>
+    </div>
+    <div class="edu-grid">
+      <div class="edu-card reveal">
+        <span class="tag-period">2025 — NOW</span>
+        <h3 class="edu-school">Politeknik Negeri Medan</h3>
+        <div class="edu-course">Perjalanan Wisata, D3 — active student</div>
+      </div>
+      <div class="edu-card reveal">
+        <span class="tag-period">2021 — 2024</span>
+        <h3 class="edu-school">SMK N 1 Kis</h3>
+        <div class="edu-course">Tata Boga (Culinary Arts)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SKILLS + LANGUAGES -->
+  <section>
+    <div class="sec-head">
+      <span class="sec-num">04</span>
+      <span class="sec-title">Skills <span class="accent">&amp;</span> Tags</span>
+      <span class="sec-rule"></span>
+    </div>
+
+    <div class="carousel-wrap">
+      <div class="carousel-track" id="carouselTrack"></div>
+    </div>
+
+    <div class="lang-row">
+      <span class="tag lang">Bahasa Indonesia</span>
+      <span class="tag lang">English</span>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div>
+      <div class="now-boarding">● Now boarding · gate open</div>
+      <div class="foot-title">Let's<br><span class="accent">Connect</span></div>
+    </div>
+    <div class="foot-contact">
+      <div><a href="mailto:chaskyanizar@gmail.com">chaskyanizar@gmail.com</a></div>
+      <div>0822 - 2902 - 8475</div>
+    </div>
+    <div class="fine-print">Chaskya Nizar Purnama · “Kayy” · Medan, Indonesia · 2026</div>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- Flight progress bar ---------- */
+  var plane = document.getElementById('flightPlane');
+  function updatePlane(){
+    var track = plane.parentElement;
+    var trackWidth = track.getBoundingClientRect().width;
+    var scrollable = document.documentElement.scrollHeight - window.innerHeight;
+    var pct = scrollable > 0 ? Math.min(window.scrollY / scrollable, 1) : 0;
+    var maxLeft = trackWidth - 10;
+    plane.style.left = (10 + pct * maxLeft) + 'px';
+  }
+  window.addEventListener('scroll', updatePlane, { passive:true });
+  window.addEventListener('resize', updatePlane);
+  updatePlane();
+
+  /* ---------- Split-flap board ---------- */
+  var board = document.getElementById('flapBoard');
+  var lines = [
+    'TOUR PRODUCT SPECIALIST',
+    'DIGITAL MARKETER',
+    'CLASS LEADER X5',
+    'CONTENT CREATOR'
+  ];
+  var CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  var maxLen = Math.max.apply(null, lines.map(function(l){ return l.length; }));
+
+  var cells = [];
+  function buildCells(len){
+    board.innerHTML = '';
+    cells = [];
+    for (var i=0;i<len;i++){
+      var d = document.createElement('div');
+      d.className = 'flap-char';
+      d.textContent = ' ';
+      board.appendChild(d);
+      cells.push(d);
+    }
+  }
+  buildCells(maxLen);
+
+  function setLine(target, animate){
+    target = target.padEnd(maxLen, ' ');
+    for (var i=0;i<cells.length;i++){
+      (function(i){
+        var cell = cells[i];
+        var finalChar = target[i];
+        cell.classList.toggle('space', finalChar === ' ');
+        if (!animate || reduceMotion){
+          cell.textContent = finalChar;
+          return;
+        }
+        var ticks = 5 + Math.floor(Math.random()*5);
+        var t = 0;
+        var interval = setInterval(function(){
+          t++;
+          if (t >= ticks){
+            clearInterval(interval);
+            cell.textContent = finalChar;
+          } else if (finalChar !== ' ') {
+            cell.textContent = CHARS[Math.floor(Math.random()*CHARS.length)];
+          }
+        }, 35 + i*3);
+      })(i);
+    }
+  }
+
+  var idx = 0;
+  setLine(lines[0], false);
+  if (!reduceMotion){
+    setInterval(function(){
+      idx = (idx + 1) % lines.length;
+      setLine(lines[idx], true);
+    }, 3200);
+  } else {
+    idx = 0;
+  }
+
+  /* ---------- Scroll reveal ---------- */
+  var revealEls = document.querySelectorAll('.reveal, .stop-stamp');
+  if ('IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (e.isIntersecting){
+          e.target.classList.add('in-view');
+          io.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.25 });
+    revealEls.forEach(function(el){ io.observe(el); });
+  } else {
+    revealEls.forEach(function(el){ el.classList.add('in-view'); });
+  }
+
+  /* ---------- Skills carousel ---------- */
+  var skills = ['Tour Product', 'Digital Marketing', 'Leadership', 'Tour Product', 'Digital Marketing', 'Leadership'];
+  var track = document.getElementById('carouselTrack');
+  skills.forEach(function(s){
+    var span = document.createElement('span');
+    span.className = 'tag';
+    span.textContent = s;
+    track.appendChild(span);
+  });
+})();
+</script>
+
+</body>
+</html>
